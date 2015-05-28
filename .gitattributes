@@ -1,0 +1,7 @@
+# Set the default behavior, in case people don't have core.autocrlf set.
+* text=auto
+
+*.lua text
+*.py text
+*.md text
+*.txt text
