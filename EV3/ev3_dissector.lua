@@ -748,22 +748,32 @@ end
 -- create a function to dissect it
 function ev3_proto.dissector(buffer,pinfo,tree)
     pinfo.cols.protocol = "EV3"
-    local subtree = tree:add(ev3_proto,buffer(),"EV3 Protocol Data")
 
-    -- First packet sent to establish connection
-    if buffer(0,3):string() == "GET" then
-        subtree:add(buffer(15,12), "Serial number: " .. buffer(15,2):string()
-            .. ":" .. buffer(17,2):string() .. ":" .. buffer(19,2):string()
-            .. ":" .. buffer(21,2):string() .. ":" .. buffer(23,2):string()
-            .. ":" .. buffer(25,2):string())
+    -- check to see if we have the whole message
+    local msg_len = buffer(0,2):le_uint() + 2
+    if buffer:len() < msg_len then
+
+        -- First packet sent to establish connection
+        if buffer:len() >= 27 and buffer(0,3):string() == "GET" then
+            local subtree = tree:add(ev3_proto,buffer(),"EV3 Request")
+            subtree:add(buffer(15,12), "Serial number: " .. buffer(15,2):string()
+                .. ":" .. buffer(17,2):string() .. ":" .. buffer(19,2):string()
+                .. ":" .. buffer(21,2):string() .. ":" .. buffer(23,2):string()
+                .. ":" .. buffer(25,2):string())
+            return
+        end
+        -- response to above
+        if buffer:len() >= 7 and buffer(0,7):string() == "Accept:" then
+            local subtree = tree:add(ev3_proto,buffer(),"EV3 Accept")
+            return
+        end
+
+        pinfo.desegment_length = msg_len - buffer:len()
+        pinfo.desegment_offset = 0
         return
     end
-    -- response to above
-    if buffer(0,7):string() == "Accept:" then
-        return
-    end
 
-    -- all additional packets are commands
+    local subtree = tree:add(ev3_proto,buffer(),"EV3 Message")
 
     -- first two bytes are always length
     subtree:add_le(ev3_proto.fields.msg_len,buffer(0,2))
@@ -865,7 +875,8 @@ function ev3_proto.dissector(buffer,pinfo,tree)
             end
         end
     end
-    
+    pinfo.desegment_len = 0
+    pinfo.desegment_offset = msg_len
 end
 
 -- load the tcp.port table
