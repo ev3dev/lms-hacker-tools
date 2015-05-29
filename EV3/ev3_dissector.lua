@@ -819,7 +819,9 @@ function ev3_proto.dissector(buffer,pinfo,tree)
             system_command_dissector(buffer,pinfo,subtree)
         end
     else -- direct command
-        if bit32.band(cmd_type, 0x02) > 0 then -- reply
+        if bit32.band(cmd_type, 0x04) > 0 then -- error
+            -- nothing to do for direct reply error
+        elseif bit32.band(cmd_type, 0x02) > 0 then -- reply
             for i, param in ipairs(global_vars[msg_num]) do
                 local value = nil
                 local length = 0
