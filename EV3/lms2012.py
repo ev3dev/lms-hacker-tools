@@ -1694,6 +1694,8 @@ class ObjectHeader(LittleEndianStructure):
     def is_block(self):
         return self.owner != 0 and self.local_bytes == 0
 
+LC0_MIN = -31
+LC0_MAX = 31
 DATA8_MIN = -127
 DATA8_MAX = 127
 DATA16_MIN = -32767
@@ -1737,3 +1739,12 @@ PRIMPAR_2_BYTES      = 2
 PRIMPAR_4_BYTES      = 3
 PRIMPAR_STRING       = 4
 PRIMPAR_LABEL        = 0x20
+
+DIRECT_COMMAND_REPLY    = 0x00
+DIRECT_COMMAND_NO_REPLY = 0x80
+DIRECT_REPLY            = 0x02
+DIRECT_REPLY_ERROR      = 0x04
+SYSTEM_COMMAND_REPLY    = 0x01
+SYSTEM_COMMAND_NO_REPLY = 0x81
+SYSTEM_REPLY            = 0x03
+SYSTEM_REPLY_ERROR      = 0x05
