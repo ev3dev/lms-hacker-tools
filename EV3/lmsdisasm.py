@@ -25,6 +25,7 @@
 from __future__ import print_function
 import argparse
 import os
+import sys
 from ctypes import *
 
 from lms2012 import *
@@ -99,16 +100,10 @@ def parse_ops(infile, start):
     if op == Op.OBJECT_END:
         return None
     params = []
-    is_subparam = False
     for param in op.params:
-        if param is Param.SUBP:
-            is_subparam = True
-            continue
-        if is_subparam:
-            value = params[-1]
-            del params[-1]
+        if isinstance(param, Subparam):
+            value = parse_param(param, infile)
             params.append(parse_subparam(param, value, infile))
-            is_subparam = False
         else:
             params.append(parse_param(param, infile))
         # special handling for CALL
