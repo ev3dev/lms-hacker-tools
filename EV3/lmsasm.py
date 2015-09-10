@@ -36,7 +36,9 @@ Token = collections.namedtuple('Token', ['typ', 'value', 'line', 'column'])
 def tokenize(s):
     keywords = { 'define', 'vmthread', 'subcall' }
     token_specification = [
-        ('NUMBER',              r'\d+(\.\d*)?'), # Integer or decimal number
+        ('STRING',              r'\'[^\']*\''),  # Literal string
+        ('HEX',                 r'0x\d+'),       # Hexadecimal literal
+        ('NUMBER',              r'-?\d+(\.\d*)?'), # Integer or decimal number
         ('PARAM_LIST_START',    r'\('),          # Start of parameter list
         ('PARAM_LIST_END',      r'\)'),          # End of parameter list
         ('BLOCK_START',         r'\{'),          # Start of block
@@ -44,7 +46,7 @@ def tokenize(s):
         ('LIST_SEPARATOR',      r','),           # List separator
         ('LABEL',               r'[A-Za-z_][A-Za-z_0-9]*:'), # Label
         ('IDENTIFIER',          r'[A-Za-z_][A-Za-z_0-9]*'),  # Identifiers
-        ('NEWLINE',             r'[\r\n]+'),     # Line endings
+        ('NEWLINE',             r'\r?\n'),       # Line endings
         ('WHITESPACE',          r'[ \t]+'),      # Whitespace
         ('INLINE_COMMENT',      r'//[^\r\n]*'),  # Inline comment
         ('BLOCK_COMMENT',       r'/\*.*\*/'),    # Block comment
@@ -64,6 +66,11 @@ def tokenize(s):
             line_start = pos
             line += 1
             line_has_tokens = False
+        elif typ == 'BLOCK_COMMENT':
+            # block comments can include newlines, so we need to adjust our line counter
+            val = mo.group(typ)
+            newlines = re.findall(r'\r?\n', val)
+            line += len(newlines)
         elif not typ in trivia_types:
             val = mo.group(typ)
             if typ == 'IDENTIFIER' and val in keywords:
@@ -94,7 +101,7 @@ def require_token(t, typ):
     return token
 
 def expect_literal_expression(t):
-    return expect_numeric_literal_expression(t) or expect_string_literal_expression(t, 'STRING')
+    return expect_numeric_literal_expression(t) or expect_string_literal_expression(t)
 
 def require_literal_expression(t):
     expression = expect_literal_expression(t)
@@ -102,10 +109,28 @@ def require_literal_expression(t):
         raise RuntimeError('Expecting literal at %d:%d' %(t[0].line, t[0].column))
     return expression
 
+def expect_constant_identifier_token(t, typ):
+    token = t and t[0]
+    if token and token.typ == 'IDENTIFIER':
+        c = None
+        if token.value in local_constants:
+            c = local_constants[token.value]
+        elif token.value in global_constants:
+            c = global_constants[token.value]
+        print("lc", local_constants)
+        print("gc", global_constants)
+        print("c", c)
+        if c and c.token.typ == typ:
+            t.pop(0)
+            return c.token
+    return None
+
 def expect_numeric_literal_expression(t):
-    token = expect_token(t, 'NUMBER')
+    token = expect_token(t, 'NUMBER') or expect_token(t, 'HEX') \
+        or expect_constant_identifier_token(t, 'NUMBER') \
+        or expect_constant_identifier_token(t, 'HEX')
     if token:
-        value = int(token.value)
+        value = int(token.value, token.typ == 'HEX' and 16 or 10)
         abs_value = abs(value)
         if (abs_value) > DATA32_MAX:
             raise RuntimeError('Integer value out of range at %d:%d' %(token.line, token.column))
@@ -127,15 +152,31 @@ def expect_numeric_literal_expression(t):
         return Expression('LITERAL', token, byte_codes)
     return None
 
-def expect_string_literal_expression(t):
-    token = expect_token(t, 'STRING')
-    if token:
-        return Expression('LITERAL', token, byte_codes)
-    return None
+def require_numeric_literal_expression(t):
+    expression = expect_numeric_literal_expression(t)
+    if not expression:
+        raise RuntimeError('Expecting numeric literal at %d:%d' %(t[0].line, t[0].column))
+    return expression
 
-def expect_identifier(t, enum):
+def expect_string_literal_expression(t):
+    token = expect_token(t, 'STRING') or expect_constant_identifier_token(t, 'STRING')
+    if not token:
+        return None
+
+    value = token.value[1:-1] # strip outer quotes
+    value = value.replace('\\r', '\r')
+    value = value.replace('\\n', '\n')
+    value = value.replace('\\t', '\t')
+    value = value.replace('\\q', '\'')
+    byte_codes = ()
+    for c in value:
+        byte_codes += (ord(c),)
+
+    byte_codes += (0,) # null terminator
+    return Expression('LITERAL', token, byte_codes)
+
+def expect_identifier_token(t, enum):
     token = t and t[0]
-    print(token)
     if token and token.typ == 'IDENTIFIER':
         if token.value in enum.__members__:
             t.pop(0)
@@ -143,7 +184,7 @@ def expect_identifier(t, enum):
     return None
 
 def require_identifier(t, enum):
-    token = expect_identifier(t, enum)
+    token = expect_identifier_token(t, enum)
     if not token:
         raise RuntimeError('Expecting %r at %d:%d' %(enum, t[0].line, t[0].column))
     return token
@@ -182,39 +223,45 @@ def define(t, constants):
         if id.value in constants:
             raise RuntimeError('symbol %r at %d:%d is already defined' %(id.value, id.line, id.column))
         constants[id.value] = value
+        return True
 
 def global_variable_declaration(t):
     pass
 
 def local_variable_declaration(t):
-    pass
+    token = expect_identifier_token(t, DataFormat)
+    if token:
+        require_token(t, 'IDENTIFIER')
+        if token.value == 'DATAS':
+            size = require_numeric_literal_expression(t)
+            print(size)
+        require_token(t, 'EOL')
+        return token
 
 def label_declaration(t):
-    pass
+    token = expect_token(t, 'LABEL')
+    if token:
+        require_token(t, 'EOL')
+        return token
 
 Statement = collections.namedtuple('Statement', ('token', 'param_list', 'byte_codes'))
 
 def statement_declaration(t):
-    token = expect_identifier(t, Op)
+    token = expect_identifier_token(t, Op)
     if not token:
         return None
 
     param_list = []
     require_token(t, 'PARAM_LIST_START')
     op = Op[token.value]
-    first = True
     for param in op.params:
-        if first:
-            first = False
-        else:
-            require_token(t, 'LIST_SEPARATOR')
         if isinstance(param, Subparam):
             subparam_token = require_identifier(t, param.subcode_type)
             subparam_type = param.subcode_type[subparam_token.value]
             expression = Expression('SUBPARAM', subparam_token, (subparam_type.value,))
             param_list.append(expression)
             for subparam in subparam_type.params:
-                require_token(t, 'LIST_SEPARATOR')
+                expect_token(t, 'LIST_SEPARATOR')
                 expression = require_expression(t)
                 param_list.append(expression)
                 print(expression)
@@ -222,6 +269,7 @@ def statement_declaration(t):
             expression = require_expression(t)
             param_list.append(expression)
             print(expression)
+        expect_token(t, 'LIST_SEPARATOR')
     require_token(t, 'PARAM_LIST_END')
     require_token(t, 'EOL')
     return Statement(token, param_list, (op.value,))
@@ -256,7 +304,7 @@ def vmthread_declaration(t):
         break
     require_token(t, 'BLOCK_END')
     require_token(t, 'EOL')
-    return Object(token, statement_list, (),)
+    return Object(token, statement_list, (Op.OBJECT_END.value,),)
 
 def subcall_declaration(t):
     pass
@@ -292,11 +340,11 @@ def compile(t):
     byte_codes = message_counter + (command, global_bytes & 0xFF,
         (local_bytes << 2) & (global_bytes >> 8))
     for obj in obj_list:
-        byte_codes += obj.byte_codes
         for s in obj.statement_list:
             byte_codes += s.byte_codes
             for p in s.param_list:
                 byte_codes += p.byte_codes
+        byte_codes += obj.byte_codes
     size = len(byte_codes)
     byte_codes = (size & 0xFF, size >> 8) + byte_codes
     for b in byte_codes:

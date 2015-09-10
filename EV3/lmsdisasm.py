@@ -66,7 +66,7 @@ def parse_object(infile, outfile, i):
             type = Callparam(ord(infile.read(1)))
             format = type.data_format
             string_size = 0
-            if format is DataFormat.DATA_S:
+            if format is DataFormat.DATAS:
                 string_size = ord(infile.read(1))
             string_size_str = ''
             if string_size:
@@ -210,7 +210,7 @@ def parse_string(infile):
     value = value.replace("\t", "\\t")
     value = value.replace("\r", "\\r")
     value = value.replace("\n", "\\n")
-    value = value.replace("\"", "\\q")
+    value = value.replace("'", "\\q")
     return "'{0}'".format(value)
 
 def main():

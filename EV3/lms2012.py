@@ -33,32 +33,32 @@ from ctypes import *
 from enum import Enum
 
 class DataFormat(Enum):
-    DATA_8        = 0x00
-    DATA_16       = 0x01
-    DATA_32       = 0x02
-    DATA_F        = 0x03
-    DATA_S        = 0x04
-    DATA_A        = 0x05
-    DATA_V        = 0x07
-    DATA_PCT      = 0x10
-    DATA_RAW      = 0x12
-    DATA_SI       = 0x13
+    DATA8        = 0x00
+    DATA16       = 0x01
+    DATA32       = 0x02
+    DATAF        = 0x03
+    DATAS        = 0x04
+    DATAA        = 0x05
+    DATAV        = 0x07
+    DATAPCT      = 0x10
+    DATARAW      = 0x12
+    DATASI       = 0x13
 
     @property
     def size(self):
-        return _data_format_size[self]
+        return _DATAFormat_size[self]
 
-_data_format_size = {
-    DataFormat.DATA_8: 1,
-    DataFormat.DATA_16: 2,
-    DataFormat.DATA_32: 4,
-    DataFormat.DATA_F: 4,
-    DataFormat.DATA_S: 1,
-    DataFormat.DATA_A: 1,
-    DataFormat.DATA_V: 1,
-    DataFormat.DATA_PCT: 4,
-    DataFormat.DATA_RAW: 4,
-    DataFormat.DATA_SI: 4,
+_DATAFormat_size = {
+    DataFormat.DATA8: 1,
+    DataFormat.DATA16: 2,
+    DataFormat.DATA32: 4,
+    DataFormat.DATAF: 4,
+    DataFormat.DATAS: 1,
+    DataFormat.DATAA: 1,
+    DataFormat.DATAV: 1,
+    DataFormat.DATAPCT: 4,
+    DataFormat.DATARAW: 4,
+    DataFormat.DATASI: 4,
 }
 
 class Param(Enum):
@@ -66,12 +66,12 @@ class Param(Enum):
     PARNO               = 0x02
     PARLAB              = 0x03
     PARVALUES           = 0x04
-    PAR8                = 0x08 + DataFormat.DATA_8.value
-    PAR16               = 0x08 + DataFormat.DATA_16.value
-    PAR32               = 0x08 + DataFormat.DATA_32.value
-    PARF                = 0x08 + DataFormat.DATA_F.value
-    PARS                = 0x08 + DataFormat.DATA_S.value
-    PARV                = 0x08 + DataFormat.DATA_V.value
+    PAR8                = 0x08 + DataFormat.DATA8.value
+    PAR16               = 0x08 + DataFormat.DATA16.value
+    PAR32               = 0x08 + DataFormat.DATA32.value
+    PARF                = 0x08 + DataFormat.DATAF.value
+    PARS                = 0x08 + DataFormat.DATAS.value
+    PARV                = 0x08 + DataFormat.DATAV.value
 
 class Subparam(Enum):
     UI_READ_SUBP    = 0
@@ -1641,16 +1641,16 @@ _subcode_enums = {
 }
 
 class Callparam(Enum):
-    IN_8      = 0x80 | DataFormat.DATA_8.value
-    IN_16     = 0x80 | DataFormat.DATA_16.value
-    IN_32     = 0x80 | DataFormat.DATA_32.value
-    IN_F      = 0x80 | DataFormat.DATA_F.value
-    IN_S      = 0x80 | DataFormat.DATA_S.value
-    OUT_8     = 0x40 | DataFormat.DATA_8.value
-    OUT_16    = 0x40 | DataFormat.DATA_16.value
-    OUT_32    = 0x40 | DataFormat.DATA_32.value
-    OUT_F     = 0x40 | DataFormat.DATA_F.value
-    OUT_S     = 0x40 | DataFormat.DATA_S.value
+    IN_8      = 0x80 | DataFormat.DATA8.value
+    IN_16     = 0x80 | DataFormat.DATA16.value
+    IN_32     = 0x80 | DataFormat.DATA32.value
+    IN_F      = 0x80 | DataFormat.DATAF.value
+    IN_S      = 0x80 | DataFormat.DATAS.value
+    OUT_8     = 0x40 | DataFormat.DATA8.value
+    OUT_16    = 0x40 | DataFormat.DATA16.value
+    OUT_32    = 0x40 | DataFormat.DATA32.value
+    OUT_F     = 0x40 | DataFormat.DATAF.value
+    OUT_S     = 0x40 | DataFormat.DATAS.value
     IO_8      = IN_8  | OUT_8
     IO_16     = IN_16 | OUT_16
     IO_32     = IN_32 | OUT_32
@@ -1658,7 +1658,7 @@ class Callparam(Enum):
     IO_S      = IN_S  | OUT_S
 
     @property
-    def data_format(self):
+    def DATAFormat(self):
         return DataFormat(self.value & 0x3F)
 
 class ProgramHeader(LittleEndianStructure):
