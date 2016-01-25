@@ -1658,7 +1658,7 @@ class Callparam(Enum):
     IO_S      = IN_S  | OUT_S
 
     @property
-    def DATAFormat(self):
+    def data_format(self):
         return DataFormat(self.value & 0x3F)
 
 class ProgramHeader(LittleEndianStructure):
