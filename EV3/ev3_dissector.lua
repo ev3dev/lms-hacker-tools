@@ -1,5 +1,5 @@
 -- Wireshark dissector for LEGO MINDSTORMS EV3
--- Copyright (C) 2015 David Lechner <david@lechnology.com>
+-- Copyright (C) 2015-2016 David Lechner <david@lechnology.com>
 --
 -- This program is free software; you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -44,6 +44,11 @@ ev3_proto.fields.path_name = ProtoField.string("ev3.path_name", "Path name", FT_
 ev3_proto.fields.handle = ProtoField.uint8("ev3.handle", "Handle", base.DEC)
 ev3_proto.fields.list_size = ProtoField.uint32("ev3.list_size", "List size", base.DEC)
 ev3_proto.fields.list = ProtoField.string("ev3.list", "List", FT_STRING)
+ev3_proto.fields.address = ProtoField.uint32("ev3.address", "Address", base.HEX)
+ev3_proto.fields.image_size = ProtoField.uint32("ev3.image_size", "Image Size", base.DEC)
+ev3_proto.fields.checksum = ProtoField.uint32("ev3.checksum", "Checksum", base.HEX)
+ev3_proto.fields.hardware_id = ProtoField.uint32("ev3.hw_id", "Hardware ID", base.DEC)
+ev3_proto.fields.firmware_id = ProtoField.uint32("ev3.fw_id", "Firmware ID", base.DEC)
 
 local system_commands = {
     [0x92] = { "BEGIN_DOWNLOAD" },
@@ -63,6 +68,15 @@ local system_commands = {
     [0xA0] = { "ENTERFWUPDATE" },
     [0xA1] = { "SETBUNDLEID" },
     [0xA2] = { "SETBUNDLESEEDID" },
+	-- The 0xF? commands only apply to firmware update
+	-- names come from TRecoveryCommand in uPBRSimpleTypes.pas in bricxcc
+	[0xF0] = { "RECOVERY_BEGIN_DOWNLOAD_WITH_ERASE" },
+	[0xF1] = { "RECOVERY_BEGIN_DOWNLOAD" },
+	[0xF2] = { "RECOVERY_DOWNLOAD_DATA" },
+	[0xF3] = { "RECOVERY_CHIP_ERASE" },
+	[0xF4] = { "RECOVERY_START_APP" },
+	[0xF5] = { "RECOVERY_GET_CHECKSUM" },
+	[0xF6] = { "RECOVERY_GET_VERSION" },
 };
 
 local direct_commands = {
@@ -585,29 +599,39 @@ local global_vars = {}
 
 function system_command_dissector(buffer,pinfo,subtree)
     local cmd = buffer(5,1):le_uint()
-    if system_commands[cmd][1] == "BEGIN_DOWNLOAD" then
+	local name = system_commands[cmd][1]
+    if name == "BEGIN_DOWNLOAD" then
         subtree:add_le(ev3_proto.fields.file_len, buffer(6,4))
         subtree:add_le(ev3_proto.fields.file_name, buffer(10,buffer:len() - 10))
-    elseif system_commands[cmd][1] == "LIST_FILES" then
+    elseif name == "LIST_FILES" then
         subtree:add_le(ev3_proto.fields.max_bytes, buffer(6,2))
         subtree:add_le(ev3_proto.fields.path_name, buffer(8,buffer:len() - 8))
-    elseif system_commands[cmd][1] == "CONTINUE_LIST_FILES" then
+    elseif name == "CONTINUE_LIST_FILES" then
         subtree:add_le(ev3_proto.fields.handle, buffer(6,1))
         subtree:add_le(ev3_proto.fields.max_bytes, buffer(7,2))
+	elseif name == "RECOVERY_BEGIN_DOWNLOAD_WITH_ERASE" or name == "RECOVERY_BEGIN_DOWNLOAD" or name == "RECOVERY_GET_CHECKSUM" then
+		subtree:add_le(ev3_proto.fields.address, buffer(6,4))
+		subtree:add_le(ev3_proto.fields.image_size, buffer(10,4))
     end
 end
 
 function system_reply_dissector(buffer,pinfo,subtree)
     local cmd = buffer(5,1):le_uint()
-    if system_commands[cmd][1] == "BEGIN_DOWNLOAD" then
+	local name = system_commands[cmd][1]
+    if name == "BEGIN_DOWNLOAD" then
         subtree:add_le(ev3_proto.fields.handle, buffer(7,1))
-    elseif system_commands[cmd][1] == "LIST_FILES" then
+    elseif name == "LIST_FILES" then
         subtree:add_le(ev3_proto.fields.list_size, buffer(7,4))
         subtree:add_le(ev3_proto.fields.handle, buffer(11,1))
         subtree:add_le(ev3_proto.fields.list, buffer(12,buffer:len() - 12))
-    elseif system_commands[cmd][1] == "CONTINUE_LIST_FILES" then
+    elseif name == "CONTINUE_LIST_FILES" then
         subtree:add_le(ev3_proto.fields.handle, buffer(7,1))
         subtree:add_le(ev3_proto.fields.list, buffer(8,buffer:len() - 8))
+	elseif name == "RECOVERY_GET_CHECKSUM" then
+		subtree:add_le(ev3_proto.fields.checksum, buffer(7,4))
+	elseif name == "RECOVERY_GET_VERSION" then
+		subtree:add_le(ev3_proto.fields.hardware_id, buffer(7,4))
+		subtree:add_le(ev3_proto.fields.firmware_id, buffer(11,4))
     end
 end
 
