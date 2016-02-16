@@ -19,7 +19,9 @@ Or add `ev3_dissector.lua` to your Wireshark personal plugins directory. You can
 find this directory by looking at the `Folders` tab of the `About` dialog box
 in Wireshark.
 
-Any packets to or from TCP port 5555 will be interpreted as "EV3" protocol.
+Any packets to or from TCP port 5555 will be interpreted as "EV3" protocol. USB
+interrupt data with class IF_CLASS_UNKNOWN will also be interpreted as "EV3"
+protocol.
 
 You can also use the filter to search for packets that contain certain types of
 data. For example if you want to search for all packets that use the `LIST_FILES`
@@ -27,7 +29,7 @@ system command, then you would use `ev3.sys_cmd == 0x99` for the filter.
 
 ### Status
 
-* Currently works with Wi-Fi only.
+* Currently works with Wi-Fi and USB only.
 * All opcodes for direct commands are implemented.
 * Only a few system commands are implemented.
 
@@ -35,7 +37,7 @@ system command, then you would use `ev3.sys_cmd == 0x99` for the filter.
 
 * Finish implementing direct commands
 * Prevent duplicate global variables in replies.
-* Add support for Bluetooth and USB.
+* Add support for Bluetooth.
 
 lmsdisasm.py
 ------------

@@ -885,3 +885,7 @@ end
 tcp_table = DissectorTable.get("tcp.port")
 -- register our protocol to handle tcp port 5555
 tcp_table:add(5555,ev3_proto)
+
+usb_table = DissectorTable.get("usb.interrupt")
+--IF_CLASS_UNKNOWN = 0xffff
+usb_table:add(0xffff,ev3_proto)
