@@ -136,7 +136,7 @@ def parse_param(param, infile):
             elif size == PRIMPAR_2_BYTES:
                 data = Data16()
             elif size == PRIMPAR_4_BYTES:
-                data == Data32()
+                data = Data32()
             infile.readinto(data)
             handle = ''
             if first_byte & PRIMPAR_HANDLE:
