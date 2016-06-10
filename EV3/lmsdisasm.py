@@ -136,7 +136,7 @@ def parse_param(param, infile):
             elif size == PRIMPAR_2_BYTES:
                 data = Data16()
             elif size == PRIMPAR_4_BYTES:
-                data == Data32()
+                data = Data32()
             infile.readinto(data)
             handle = ''
             if first_byte & PRIMPAR_HANDLE:
@@ -189,15 +189,25 @@ def parse_param(param, infile):
 def parse_subparam(type, value, infile):
     subcode_type = type.subcode_type(int(value))
     params = [ subcode_type.name ]
+    values = -1
     for param in subcode_type.params:
-        params.append(parse_param(param, infile))
-        # special handling for varargs
-        if param is Param.PARNO:
-            if not int(params[-1]):
-                del params[-1]
-            else:
-                for i in range(int(params[-1])):
-                    params.append(parse_param(Param.PARV, infile))
+        # special handling for arrays
+        if param is Param.PARVALUES:
+            values = int(params[-1])
+            # print("PARVALUES = ", values)
+        elif values >= 0:
+            while values > 0:
+                values -= 1
+                params.append(parse_param(param, infile))
+        else:
+            params.append(parse_param(param, infile))
+            # special handling for varargs
+            if param is Param.PARNO:
+                if not int(params[-1]):
+                    del params[-1]
+                else:
+                    for i in range(int(params[-1])):
+                        params.append(parse_param(Param.PARV, infile))
     return ",".join(params)
 
 def parse_string(infile):
