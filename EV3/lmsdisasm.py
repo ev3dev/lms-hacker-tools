@@ -44,7 +44,7 @@ def parse_object_header(infile):
     infile.readinto(header)
     return header
 
-def parse_object(infile, outfile, i):
+def parse_object(infile, outfile, id):
     header = parse_object_header(infile)
     save_position = infile.tell()
     infile.seek(header.offset)
@@ -59,7 +59,7 @@ def parse_object(infile, outfile, i):
         type = "block"
     else:
         raise ValueError("Unknown object type")
-    print("{0} OBJECT{1}".format(type, i+1), file=outfile)
+    print("{0} OBJECT{1}".format(type, id), file=outfile)
     print("{", file=outfile)
     if num_args:
         for i in range(num_args):
@@ -81,10 +81,10 @@ def parse_object(infile, outfile, i):
         print(file=outfile)
     while True:
         offset = infile.tell()
-        line = parse_ops(infile, header.offset)
+        line = parse_ops(infile, header.offset, id)
         if not line:
             break
-        print("OFFSET", offset - header.offset, ":", sep='', file=outfile)
+        print("OFFSET", id, "_", offset - header.offset, ":", sep='', file=outfile)
         if line == "RETURN()":
             # skip printing "RETURN()" if it is the last op in an object
             peek = ord(infile.read(1))
@@ -95,7 +95,7 @@ def parse_object(infile, outfile, i):
     print("}", file=outfile)
     infile.seek(save_position)
 
-def parse_ops(infile, start):
+def parse_ops(infile, start, id):
     op = Op(ord(infile.read(1)))
     if op == Op.OBJECT_END:
         return None
@@ -119,7 +119,7 @@ def parse_ops(infile, start):
     if op.name[:2] == "JR":
         offset = int(params[-1])
         del params[-1]
-        params.append("OFFSET{0}".format(infile.tell() - start + offset))
+        params.append("OFFSET{0}_{1}".format(id, infile.tell() - start + offset))
     return "{0}({1})".format(op.name, ",".join(params))
 
 def parse_param(param, infile):
@@ -241,7 +241,7 @@ def main():
         print("DATA8 GLOBAL", i, sep='', file=args.output)
     for i in range(num_objs):
         print(file=args.output)
-        parse_object(args.input, args.output, i)
+        parse_object(args.input, args.output, i+1)
 
 if __name__ == '__main__':
     main()
