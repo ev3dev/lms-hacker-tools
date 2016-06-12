@@ -1692,7 +1692,7 @@ class ObjectHeader(LittleEndianStructure):
 
     @property
     def is_block(self):
-        return self.owner != 0 and self.local_bytes == 0
+        return self.owner != 0
 
 LC0_MIN = -31
 LC0_MAX = 31
