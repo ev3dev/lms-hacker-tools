@@ -913,3 +913,6 @@ tcp_table:add(5555,ev3_proto)
 usb_table = DissectorTable.get("usb.interrupt")
 --IF_CLASS_UNKNOWN = 0xffff
 usb_table:add(0xffff,ev3_proto)
+
+bluetooth_table = DissectorTable.get("btrfcomm.dlci")
+bluetooth_table:add(2,ev3_proto)
