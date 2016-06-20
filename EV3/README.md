@@ -29,7 +29,7 @@ system command, then you would use `ev3.sys_cmd == 0x99` for the filter.
 
 ### Status
 
-* Currently works with Wi-Fi and USB only.
+* Works with USB, Bluetooth and Wi-Fi.
 * All opcodes for direct commands are implemented.
 * Only a few system commands are implemented.
 
@@ -37,7 +37,6 @@ system command, then you would use `ev3.sys_cmd == 0x99` for the filter.
 
 * Finish implementing direct commands
 * Prevent duplicate global variables in replies.
-* Add support for Bluetooth.
 
 lmsdisasm.py
 ------------
