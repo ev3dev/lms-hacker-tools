@@ -5,3 +5,4 @@
 *.py text
 *.md text
 *.txt text
+*.yml text

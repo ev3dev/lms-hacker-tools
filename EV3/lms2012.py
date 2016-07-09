@@ -592,6 +592,7 @@ _op_code_params = {
     Op.INPUT_READEXT:        (Param.PAR8, Param.PAR8, Param.PAR8, Param.PAR8, Param.PAR8, Param.PARNO),
     Op.INPUT_WRITE:          (Param.PAR8, Param.PAR8, Param.PAR8, Param.PAR8),
     #    Output
+    Op.OUTPUT_GET_TYPE:      (Param.PAR8, Param.PAR8, Param.PAR8),
     Op.OUTPUT_SET_TYPE:      (Param.PAR8, Param.PAR8, Param.PAR8),
     Op.OUTPUT_RESET:         (Param.PAR8, Param.PAR8),
     Op.OUTPUT_STOP:          (Param.PAR8, Param.PAR8, Param.PAR8),
@@ -601,6 +602,7 @@ _op_code_params = {
     Op.OUTPUT_POLARITY:      (Param.PAR8, Param.PAR8, Param.PAR8),
     Op.OUTPUT_READ:          (Param.PAR8, Param.PAR8, Param.PAR8, Param.PAR32),
     Op.OUTPUT_READY:         (Param.PAR8, Param.PAR8),
+    Op.OUTPUT_POSITION:      (Param.PAR8, Param.PAR8, Param.PAR32),
     Op.OUTPUT_TEST:          (Param.PAR8, Param.PAR8, Param.PAR8),
     Op.OUTPUT_STEP_POWER:    (Param.PAR8, Param.PAR8, Param.PAR8, Param.PAR32, Param.PAR32, Param.PAR32, Param.PAR8),
     Op.OUTPUT_TIME_POWER:    (Param.PAR8, Param.PAR8, Param.PAR8, Param.PAR32, Param.PAR32, Param.PAR32, Param.PAR8),
@@ -700,6 +702,7 @@ _ui_read_subcode_params = {
     UiReadSubcode.GET_OS_BUILD:           (Param.PAR8,Param.PAR8),
     UiReadSubcode.GET_VERSION:            (Param.PAR8,Param.PAR8),
     UiReadSubcode.GET_IP:                 (Param.PAR8,Param.PAR8),
+    UiReadSubcode.GET_POWER:              (Param.PARF,Param.PARF,Param.PARF,Param.PARF),
     UiReadSubcode.GET_SDCARD:             (Param.PAR8,Param.PAR32,Param.PAR32),
     UiReadSubcode.GET_USBSTICK:           (Param.PAR8,Param.PAR32,Param.PAR32),
 }
@@ -749,6 +752,7 @@ _ui_write_subcode_params = {
     UiWriteSubcode.VALUE16:                (Param.PAR16,),
     UiWriteSubcode.VALUE32:                (Param.PAR32,),
     UiWriteSubcode.VALUEF:                 (Param.PARF,),
+    UiWriteSubcode.ADDRESS:                (Param.PAR32,),
     UiWriteSubcode.INIT_RUN:               (),
     UiWriteSubcode.UPDATE_RUN:             (),
     UiWriteSubcode.LED:                    (Param.PAR8,),
