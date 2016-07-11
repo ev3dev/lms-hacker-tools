@@ -134,7 +134,7 @@ with open('bytecodes.yml') as f:
 # Read as yaml and validate the data structures
 
 with open('bytecodes.yml') as f:
-    data = yaml.safe_load(f)
+    data = yaml.load(f, Loader=yaml.CLoader)
 
 opcodes = data['op']
 for opcode in opcodes:
