@@ -82,9 +82,10 @@ def parse_object(infile, outfile, id):
     while True:
         offset = infile.tell()
         line = parse_ops(infile, header.offset, id)
+        print("OFFSET", id, "_", offset - header.offset, ":", sep='', file=outfile)
+        # this test if after print to make sure final offset is printed at end of object
         if not line:
             break
-        print("OFFSET", id, "_", offset - header.offset, ":", sep='', file=outfile)
         if line == "RETURN()":
             # skip printing "RETURN()" if it is the last op in an object
             peek = ord(infile.read(1))
