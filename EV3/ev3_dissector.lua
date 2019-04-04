@@ -687,10 +687,11 @@ function parameter_dissector(globals,start,param_type,buffer,subtree)
                     else  -- PRIMPAR_STRING
                         table.insert(flags, "PRIMPAR_STRING")
                     end
+                    local str_start = new_start
                     while buffer(new_start,1):le_uint() > 0 do
                         new_start = new_start + 1
                     end
-                    value = buffer(new_start,new_start-start):string()
+                    value = buffer(str_start,new_start-start):string()
                     new_start = new_start + 1
                 elseif bytes == 1 then -- PRIMPAR_1_BYTE:
                     table.insert(flags, "PRIMPAR_1_BYTE")
