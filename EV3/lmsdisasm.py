@@ -86,12 +86,6 @@ def parse_object(infile, outfile, id):
         # this test if after print to make sure final offset is printed at end of object
         if not line:
             break
-        if line == "RETURN()":
-            # skip printing "RETURN()" if it is the last op in an object
-            peek = ord(infile.read(1))
-            infile.seek(-1, os.SEEK_CUR)
-            if peek == Op.OBJECT_END.value:
-                continue
         print("\t", line, sep='', file=outfile)
     print("}", file=outfile)
     infile.seek(save_position)
