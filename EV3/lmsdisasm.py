@@ -149,6 +149,13 @@ def parse_param(param, infile, id):
             if first_byte & PRIMPAR_LABEL:
                 return "LABEL{0}".format(ord(infile.read(1)))
             size = first_byte & PRIMPAR_BYTES
+
+            # Hack to try to guess when CALL opcode has float parameters.
+            # We can't lookup the real parameter type since this is just a
+            # single pass disassembler.
+            if param is Param.PARV and size == PRIMPAR_4_BYTES:
+                param = Param.PARF
+
             if param is Param.PARF:
                 if size != PRIMPAR_4_BYTES:
                     raise ValueError("Expecting float value")
