@@ -2,7 +2,7 @@
 
 # The MIT License (MIT)
 
-# Copyright (c) 2015 David Lechner <david@lechnology.com>
+# Copyright (c) 2015,2019 David Lechner <david@lechnology.com>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -82,7 +82,7 @@ def parse_object(infile, outfile, id):
     while True:
         offset = infile.tell()
         line = parse_ops(infile, header.offset, id)
-        print("OFFSET", id, "_", offset - header.offset, ":", sep='', file=outfile)
+        print("OFFSET{0}_{1}: // global offset: {2}".format(id, offset - header.offset, offset), file=outfile)
         # this test if after print to make sure final offset is printed at end of object
         if not line:
             break
