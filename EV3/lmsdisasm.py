@@ -71,13 +71,13 @@ def parse_object(infile, outfile, id):
             string_size_str = ''
             if string_size:
                 string_size_str = " {0}".format(string_size)
-            print("\t", type.name, " LOCAL", arg_bytes, string_size_str, sep='', file=outfile)
+            print("\t{0} LOCAL{1}_{2}{3}".format(type.name, id, arg_bytes, string_size_str), file=outfile)
             arg_bytes += string_size or format.size
 
         print(file=outfile)
     if header.local_bytes - arg_bytes:
         for i in range(arg_bytes, header.local_bytes):
-            print("\tDATA8 LOCAL", i, sep='', file=outfile)
+            print("\tDATA8 LOCAL{0}_{1}".format(id, i), file=outfile)
         print(file=outfile)
     while True:
         offset = infile.tell()
@@ -103,10 +103,10 @@ def parse_ops(infile, start, id):
     params = []
     for param in op.params:
         if isinstance(param, Subparam):
-            value = parse_param(param, infile)
-            params.append(parse_subparam(param, value, infile))
+            value = parse_param(param, infile, id)
+            params.append(parse_subparam(param, value, infile, id))
         else:
-            params.append(parse_param(param, infile))
+            params.append(parse_param(param, infile, id))
         # special handling for CALL
         if op.name == "CALL" and param is Param.PAR16:
             params[-1] = "OBJECT{0}".format(params[-1])
@@ -115,7 +115,7 @@ def parse_ops(infile, start, id):
             value = int(params[-1])
             del params[-1]
             for i in range(value):
-                params.append(parse_param(Param.PARV, infile))
+                params.append(parse_param(Param.PARV, infile, id))
     # special handling for jump ops
     if op.name[:2] == "JR":
         offset = int(params[-1])
@@ -123,14 +123,14 @@ def parse_ops(infile, start, id):
         params.append("OFFSET{0}_{1}".format(id, infile.tell() - start + offset))
     return "{0}({1})".format(op.name, ",".join(params))
 
-def parse_param(param, infile):
+def parse_param(param, infile, id):
     first_byte = ord(infile.read(1))
     if first_byte & PRIMPAR_LONG:
         if first_byte & PRIMPAR_VARIABLE:
             if first_byte & PRIMPAR_GLOBAL:
                 scope = 'GLOBAL'
             else:
-                scope = 'LOCAL'
+                scope = 'LOCAL{0}_'.format(id)
             size = first_byte & PRIMPAR_BYTES
             if size == PRIMPAR_1_BYTE:
                 data = Data8()
@@ -177,7 +177,7 @@ def parse_param(param, infile):
             if first_byte & PRIMPAR_GLOBAL:
                 scope = 'GLOBAL'
             else:
-                scope = 'LOCAL'
+                scope = 'LOCAL{0}_'.format(id)
             return "{0}{1}".format(scope, first_byte & PRIMPAR_INDEX)
         else:
             if first_byte & PRIMPAR_CONST_SIGN:
@@ -187,7 +187,7 @@ def parse_param(param, infile):
 
     raise NotImpementedError("TODO")
 
-def parse_subparam(type, value, infile):
+def parse_subparam(type, value, infile, id):
     subcode_type = type.subcode_type(int(value))
     params = [ subcode_type.name ]
     values = -1
@@ -199,16 +199,16 @@ def parse_subparam(type, value, infile):
         elif values >= 0:
             while values > 0:
                 values -= 1
-                params.append(parse_param(param, infile))
+                params.append(parse_param(param, infile, id))
         else:
-            params.append(parse_param(param, infile))
+            params.append(parse_param(param, infile, id))
             # special handling for varargs
             if param is Param.PARNO:
                 if not int(params[-1]):
                     del params[-1]
                 else:
                     for i in range(int(params[-1])):
-                        params.append(parse_param(Param.PARV, infile))
+                        params.append(parse_param(Param.PARV, infile, id))
     return ",".join(params)
 
 def parse_string(infile):
