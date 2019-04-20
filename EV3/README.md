@@ -3,14 +3,6 @@ EV3
 
 Tools for LEGO MINDSTORMS EV3
 
-bytecodes.yml
--------------
-
-Canonical source for EV3 bytecodes. It contains definitions for bytecodes for
-all known forks of the lms2012 VM.
-
-The file is both human and machine readable.
-
 
 ev3_dissector.lua
 -----------------
