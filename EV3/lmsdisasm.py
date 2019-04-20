@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # The MIT License (MIT)
 
@@ -33,7 +33,7 @@ from lms2012 import *
 def parse_program_header(infile, size):
     header = ProgramHeader()
     infile.readinto(header)
-    if header.lego != 'LEGO':
+    if header.lego != b'LEGO':
         raise ValueError("Bad file - does not start with 'LEGO'")
     if header.size != size:
         raise ValueError("Bad file - size is incorrect")
