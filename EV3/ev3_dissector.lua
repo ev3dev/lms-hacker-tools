@@ -637,6 +637,7 @@ end
 
 function parameter_dissector(globals,start,param_type,buffer,subtree)
     local flags = {}
+    local value = nil
     table.insert(flags, param_type)
     local first_byte = buffer(start, 1):le_uint()
     local new_start = start + 1
@@ -680,7 +681,6 @@ function parameter_dissector(globals,start,param_type,buffer,subtree)
             else
                 table.insert(flags, "PRIMPAR_VALUE")
                 local bytes = bit32.band(first_byte,0x07) -- PRIMPAR_BYTES
-                local value = nil
                 if bytes == 0 or bytes == 4 then
                     if bytes == 0 then -- PRIMPAR_STRING_OLD
                         table.insert(flags, "PRIMPAR_STRING_OLD")
@@ -727,7 +727,7 @@ function parameter_dissector(globals,start,param_type,buffer,subtree)
             table.insert(flags, "Index: " .. index)
         else -- PRIMPAR_CONST
             table.insert(flags, "PRIMPAR_CONST")
-            local value = bit32.band(first_byte, 0x3F) -- PRIMPAR_VALUE
+            value = bit32.band(first_byte, 0x3F) -- PRIMPAR_VALUE
             if bit32.band(first_byte, 0x20) > 0 then -- PRIMPAR_CONST_SIGN
                 value = value - (0x3F + 1) -- PRIMPAR_VALUE
             end
@@ -737,7 +737,7 @@ function parameter_dissector(globals,start,param_type,buffer,subtree)
     subtree:add(buffer(start,new_start-start), "Parameter: 0x"
         .. buffer(start,new_start-start)
         .. " (" .. table.concat(flags, ", ") ..")")
-    return new_start
+    return new_start, value
 end
 
 function direct_command_dissector(globals,start,buffer,pinfo,subtree)
@@ -746,7 +746,9 @@ function direct_command_dissector(globals,start,buffer,pinfo,subtree)
         .. direct_commands[cmd][1] .. ")")
     start = start + 1
     local is_subparam = false
-    local command = 0
+    local is_parvalues = false
+    local num_parvalues = 0
+    local value = nil
     -- iterate parameters
     for i, param_type in ipairs(direct_commands[cmd][2]) do
         if is_subparam then
@@ -756,13 +758,20 @@ function direct_command_dissector(globals,start,buffer,pinfo,subtree)
                 .. " (SUBP Command:" .. param_type[subcmd][1] .. ")")
             start = start + 1
             for j, subparam_type in ipairs(param_type[subcmd][2]) do
-                start = parameter_dissector(globals,start,subparam_type,buffer,subtree)
+                start, value = parameter_dissector(globals,start,subparam_type,buffer,subtree)
+            end
+        elseif is_parvalues then
+            for j = 1, num_parvalues do
+                start, value = parameter_dissector(globals,start,param_type,buffer,subtree)
             end
         else
             if param_type == "SUBP" then
                 is_subparam = true
+            elseif param_type == "PARVALUES" then
+                is_parvalues = true
+                num_parvalues = value -- param before PARVALUES is always the number of params to follow
             else
-                start = parameter_dissector(globals,start,param_type,buffer,subtree)
+                start, value = parameter_dissector(globals,start,param_type,buffer,subtree)
             end
         end
     end
