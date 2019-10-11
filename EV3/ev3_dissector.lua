@@ -759,6 +759,12 @@ function direct_command_dissector(globals,start,buffer,pinfo,subtree)
             start = start + 1
             for j, subparam_type in ipairs(param_type[subcmd][2]) do
                 start, value = parameter_dissector(globals,start,subparam_type,buffer,subtree)
+                if subparam_type == "PARNO" then
+                    local num_parno = value
+                    for j = 1, num_parno do
+                        start, value = parameter_dissector(globals,start,"PARV",buffer,subtree)
+                    end
+                end
             end
         elseif is_parvalues then
             for j = 1, num_parvalues do
@@ -772,6 +778,12 @@ function direct_command_dissector(globals,start,buffer,pinfo,subtree)
                 num_parvalues = value -- param before PARVALUES is always the number of params to follow
             else
                 start, value = parameter_dissector(globals,start,param_type,buffer,subtree)
+                if param_type == "PARNO" then
+                    local num_parno = value
+                    for j = 1, num_parno do
+                        start, value = parameter_dissector(globals,start,"PARV",buffer,subtree)
+                    end
+                end
             end
         end
     end
